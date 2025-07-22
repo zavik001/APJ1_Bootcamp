@@ -5,15 +5,11 @@ public class PerimeterOfTringle {
 
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
-
         float[] nodes = new float[6];
-
-        System.out.println("Enter the coordinates of the triangle vertices:");
         int t = 0;
         while (t < 6) {
-            String val = in.nextLine();
             try {
-                float node = Float.parseFloat(val);
+                float node = Float.parseFloat(in.nextLine());
                 nodes[t] = node;
                 t++;
             } catch (NumberFormatException e) {
