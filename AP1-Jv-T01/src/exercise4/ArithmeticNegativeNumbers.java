@@ -10,8 +10,10 @@ public class ArithmeticNegativeNumbers {
         } else {
             int col = 0;
             long arif = 0L;
+            int[] arr = new int[t];
             for (int i = 0; i < t; i++) {
                 int num = inputNumber();
+                arr[i] = num;
                 if (num < 0) {
                     col++;
                     arif += num;
