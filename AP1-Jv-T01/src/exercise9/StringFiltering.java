@@ -25,9 +25,10 @@ public class StringFiltering {
         for (String line : lines) {
             if (isUnderLine(filter, line)) {
                 if (isFirst) {
-                    System.out.println(line);
+                    System.out.print(line);
+                    isFirst = false;
                 } else {
-                    System.out.println(", " + line);
+                    System.out.print(", " + line);
                 }
             }
         }
