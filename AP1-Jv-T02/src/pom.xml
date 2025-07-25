@@ -3,7 +3,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>school21</groupId>
+  <groupId>school21.AP1JvT02</groupId>
   <artifactId>src</artifactId>
   <version>run</version>
 
@@ -20,7 +20,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.1.0</version>
                 <configuration>
-                    <mainClass>school21.Main</mainClass>
+                    <mainClass>school21.AP1JvT02.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>
