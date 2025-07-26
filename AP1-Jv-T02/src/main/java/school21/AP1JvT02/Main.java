@@ -5,7 +5,11 @@ import java.util.List;
 import java.util.Scanner;
 
 import school21.AP1JvT02.example.Process;
+import school21.AP1JvT02.example.ProcessWithFunctionalInterface;
 import school21.AP1JvT02.example.ProcessWithInterface;
+import school21.AP1JvT02.example.functional.interfaces.Check;
+import school21.AP1JvT02.example.functional.interfaces.Replace;
+import school21.AP1JvT02.example.functional.interfaces.Upper;
 import school21.AP1JvT02.example.interfaces.ProcessInterface;
 import school21.AP1JvT02.example.interfaces.ProcessInterfaceRealisation;
 import school21.AP1JvT02.exercise0.AnimalEx0;
@@ -257,8 +261,46 @@ public class Main {
                 processWithanonim: %s
                 """, process.process(s), processWithInterface.process(s2), processWithAnonimInterfaceClass.process(s3), prcessAnonimClass.process(s4));
 
+        // Funtional with anonim
+        ProcessWithFunctionalInterface processWithFunctionalInterface
+                = new ProcessWithFunctionalInterface(
+                        new Check() {
+                    @Override
+                    public void check(String s) {
+                        System.out.println(10 + "good");
+                    }
+                },
+                        new Upper() {
+                    @Override
+                    public String upper(String s) {
+                        return s.toLowerCase();
+                    }
+                },
+                        new Replace() {
+                    @Override
+                    public String replace(String s) {
+                        return s.replace('q', 'w');
+                    }
+                });
 
-
-        // hle
+        // Funtional with lamda-expressions
+        // Let's look at how anonymous classes can be replaced with lambda expressions
+        ProcessWithFunctionalInterface processWithFunctionalInterface1
+                = new ProcessWithFunctionalInterface(
+                        (String input) -> {
+                            System.out.println(input + "good");
+                        },
+                        (String input) -> {
+                            return input.toUpperCase();
+                        },
+                        (String input) -> {
+                            return input.replace('T', 'Q');
+                        });
+        String sss = "WEEERRRTTTWWWW";
+        String ssss = "qqq";
+        System.out.printf("""
+                processWithFuntionalIntreface1(lamda): %s
+                processWithFuntionalIntreface1(anonim classes): %s
+                """, processWithFunctionalInterface1.process(sss), processWithFunctionalInterface.process(ssss));
     }
 }
