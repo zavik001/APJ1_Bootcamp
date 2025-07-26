@@ -20,6 +20,8 @@ import school21.AP1JvT02.exercise2.AnimalEx2;
 import school21.AP1JvT02.exercise2.AnimalFactoryEx2;
 import school21.AP1JvT02.exercise3.AnimalEx3;
 import school21.AP1JvT02.exercise3.AnimalFactoryEx3;
+import school21.AP1JvT02.exercise4.AnimalEx4;
+import school21.AP1JvT02.exercise4.AnimalFactoryEx4;
 
 public class Main {
 
@@ -28,6 +30,7 @@ public class Main {
     static final String ERROR_AGE = "Incorrect input. Age <= 0";
     static final String EROR_PARSE = "Could not parse a number. Please, try again";
     static final String ERROR_MASS = "Incorrect input. Mass <= 0";
+    private static final long startTimeNano = System.nanoTime();
 
     public static void main(String[] args) {
         Scanner in = new Scanner(System.in);
@@ -49,6 +52,8 @@ public class Main {
                     exercise2(in);
                 case 3 ->
                     exercise3(in);
+                case 4 ->
+                    exercise4(in);
                 case 6 ->
                     functionExemples(in);
                 case 7 ->
@@ -63,6 +68,7 @@ public class Main {
                 1. exercise1
                 2. exercise2
                 3. exercise3
+                4. exercise4
                 6. function
                 7. quit
                 """);
@@ -230,6 +236,38 @@ public class Main {
                     }
                 })
                 .forEach(System.out::println);
+    }
+
+    static void exercise4(Scanner in) {
+        List<AnimalEx4> pets = new LinkedList<>();
+        Integer t = inputIntNumber(in);
+        if (t <= 0) {
+            System.out.println(ERROR);
+            return;
+        }
+        for (int i = 0; i < t; i++) {
+            String animal = in.nextLine();
+            if (!"dog".equals(animal) && !"cat".equals(animal)) {
+                System.out.println(ERROR_INPUT);
+                continue;
+            }
+            String name = in.nextLine();
+            Integer age = inputIntNumber(in);
+            if (age <= 0) {
+                System.out.println(ERROR_AGE);
+                continue;
+            }
+            pets.add(AnimalFactoryEx4.creatAnimal(animal, name, age));
+        }
+        pets.parallelStream()
+                .forEach(pet -> {
+                    Double startTime = (System.nanoTime() - startTimeNano) / 1_000_000_000.0;
+                    Double walkTime = pet.goToWalk();
+                    Double endTime = startTime + walkTime;
+                    synchronized (System.out) {
+                        System.out.printf("%s, srart time = %.2f, end time = %.2f\n", pet.toString(), startTime, endTime);
+                    }
+                });
     }
 
     static void functionExemples(Scanner in) {
