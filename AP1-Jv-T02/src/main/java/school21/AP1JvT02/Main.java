@@ -4,6 +4,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
 
+import school21.AP1JvT02.example.Process;
+import school21.AP1JvT02.example.ProcessWithInterface;
+import school21.AP1JvT02.example.interfaces.ProcessInterface;
+import school21.AP1JvT02.example.interfaces.ProcessInterfaceRealisation;
 import school21.AP1JvT02.exercise0.AnimalEx0;
 import school21.AP1JvT02.exercise0.AnimalFactoryEx0;
 import school21.AP1JvT02.exercise1.AnimalEx1;
@@ -37,6 +41,8 @@ public class Main {
                     exercise1(in);
                 case 2 ->
                     exercise2(in);
+                case 6 ->
+                    funtionExemples(in);
                 case 7 ->
                     flag = false;
             }
@@ -48,6 +54,7 @@ public class Main {
                 0. exercise0
                 1. exercise1
                 2. exercise2
+                6. function
                 7. quit
                 """);
     }
@@ -184,5 +191,74 @@ public class Main {
         pets.stream()
                 .filter(x -> isUnderLine("Dog", trimLine(x.toString(), 3)) || isUnderLine("Cat", trimLine(x.toString(), 3)))
                 .forEach(System.out::println);
+    }
+
+    static void funtionExemples(Scanner in) {
+        Process process = new Process();
+
+        // 1
+        ProcessWithInterface processWithInterface = new ProcessWithInterface(new ProcessInterfaceRealisation());
+
+        // anonim class 
+        ProcessInterface anonimProcess = new ProcessInterface() {
+            @Override
+            public void check(String s) {
+                if (s.length() > 10) {
+                    System.out.println("nice");
+                } else {
+                    System.out.println("niceee");
+                }
+            }
+
+            @Override
+            public String upper(String s) {
+                return s.toUpperCase();
+            }
+
+            @Override
+            public String replase(String s) {
+                return s.replace('O', 'D');
+            }
+        };
+
+        // 2
+        ProcessWithInterface processWithAnonimInterfaceClass = new ProcessWithInterface(anonimProcess);
+
+        // 3 
+        ProcessWithInterface prcessAnonimClass = new ProcessWithInterface(new ProcessInterface() {
+            @Override
+            public void check(String s) {
+                if (s.length() > 116) {
+                    System.out.println("nice");
+                } else {
+                    System.out.println("niceee");
+                }
+            }
+
+            @Override
+            public String upper(String s) {
+                return s.toUpperCase();
+            }
+
+            @Override
+            public String replase(String s) {
+                return s.replace('C', 'R');
+            }
+        });
+
+        String s = "Hellooolll";
+        String s2 = "BAAAS";
+        String s3 = "hgjahdfsgj";
+        String s4 = "kasdfgh";
+        System.out.printf("""
+                process : %s
+                processWithInterface : %s
+                processWithanonimIn : %s
+                processWithanonim: %s
+                """, process.process(s), processWithInterface.process(s2), processWithAnonimInterfaceClass.process(s3), prcessAnonimClass.process(s4));
+
+
+
+        // hle
     }
 }
