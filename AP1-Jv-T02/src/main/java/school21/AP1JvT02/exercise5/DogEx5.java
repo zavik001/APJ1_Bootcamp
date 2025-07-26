@@ -1,8 +1,8 @@
-package school21.AP1JvT02.exercise0;
+package school21.AP1JvT02.exercise5;
 
-public class DogEx0 extends AnimalEx0 {
+public class DogEx5 extends AnimalEx5 {
 
-    public DogEx0(String name, Integer age) {
+    public DogEx5(String name, Integer age) {
         super(name, age);
     }
 

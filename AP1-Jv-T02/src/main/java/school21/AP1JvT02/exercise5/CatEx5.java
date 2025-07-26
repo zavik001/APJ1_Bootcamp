@@ -1,8 +1,8 @@
-package school21.AP1JvT02.exercise0;
+package school21.AP1JvT02.exercise5;
 
-public class CatEx0 extends AnimalEx0 {
+public class CatEx5 extends AnimalEx5 {
 
-    public CatEx0(String name, Integer age) {
+    public CatEx5(String name, Integer age) {
         super(name, age);
     }
 
