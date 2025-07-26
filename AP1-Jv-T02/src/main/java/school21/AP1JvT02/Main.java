@@ -302,5 +302,29 @@ public class Main {
                 processWithFuntionalIntreface1(lamda): %s
                 processWithFuntionalIntreface1(anonim classes): %s
                 """, processWithFunctionalInterface1.process(sss), processWithFunctionalInterface.process(ssss));
+
+        // reduction lambda
+        ProcessWithFunctionalInterface processWithFunctionalInterface2
+                = new ProcessWithFunctionalInterface(
+                        input -> System.out.println(input + "good"),
+                        input -> input.toUpperCase(),
+                        input -> input.replace('T', 'Q')
+                );
+        System.out.printf("""
+                processWithFuntionalIntreface1(lamda): %s
+                processWithFuntionalIntreface1(anonim classes): %s
+                """, processWithFunctionalInterface1.process(sss), processWithFunctionalInterface2.process(ssss));
+
+        // reduction method reference
+        ProcessWithFunctionalInterface processWithFunctionalInterface3
+                = new ProcessWithFunctionalInterface(
+                        input -> System.out.println(input + "good"),
+                        String::toUpperCase,
+                        input -> input.replace('T', 'Q')
+                );
+        System.out.printf("""
+                processWithFuntionalIntreface1(lamda): %s
+                processWithFuntionalIntreface1(anonim classes): %s
+                """, processWithFunctionalInterface1.process(sss), processWithFunctionalInterface3.process(ssss));
     }
 }
