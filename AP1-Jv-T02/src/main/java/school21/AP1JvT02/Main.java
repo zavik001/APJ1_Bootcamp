@@ -7,7 +7,7 @@ import java.util.Scanner;
 import school21.AP1JvT02.example.Process;
 import school21.AP1JvT02.example.ProcessWithFunctionalInterface;
 import school21.AP1JvT02.example.ProcessWithInterface;
-import school21.AP1JvT02.example.functional.interfaces.Check;
+import school21.AP1JvT02.example.functional.interfaces.CheckRealisation;
 import school21.AP1JvT02.example.functional.interfaces.Replace;
 import school21.AP1JvT02.example.functional.interfaces.Upper;
 import school21.AP1JvT02.example.interfaces.ProcessInterface;
@@ -18,6 +18,8 @@ import school21.AP1JvT02.exercise1.AnimalEx1;
 import school21.AP1JvT02.exercise1.AnimalFactoryEx1;
 import school21.AP1JvT02.exercise2.AnimalEx2;
 import school21.AP1JvT02.exercise2.AnimalFactoryEx2;
+import school21.AP1JvT02.exercise3.AnimalEx3;
+import school21.AP1JvT02.exercise3.AnimalFactoryEx3;
 
 public class Main {
 
@@ -45,8 +47,10 @@ public class Main {
                     exercise1(in);
                 case 2 ->
                     exercise2(in);
+                case 3 ->
+                    exercise3(in);
                 case 6 ->
-                    funtionExemples(in);
+                    functionExemples(in);
                 case 7 ->
                     flag = false;
             }
@@ -58,6 +62,7 @@ public class Main {
                 0. exercise0
                 1. exercise1
                 2. exercise2
+                3. exercise3
                 6. function
                 7. quit
                 """);
@@ -197,7 +202,37 @@ public class Main {
                 .forEach(System.out::println);
     }
 
-    static void funtionExemples(Scanner in) {
+    static void exercise3(Scanner in) {
+        List<AnimalEx3> pets = new LinkedList<>();
+        Integer t = inputIntNumber(in);
+        if (t <= 0) {
+            System.out.println(ERROR);
+            return;
+        }
+        for (int i = 0; i < t; i++) {
+            String animal = in.nextLine();
+            if (!"dog".equals(animal) && !"cat".equals(animal)) {
+                System.out.println(ERROR_INPUT);
+                continue;
+            }
+            String name = in.nextLine();
+            Integer age = inputIntNumber(in);
+            if (age <= 0) {
+                System.out.println(ERROR_AGE);
+                continue;
+            }
+            pets.add(AnimalFactoryEx3.creatAnimal(animal, name, age));
+        }
+        pets.stream()
+                .peek(pet -> {
+                    if (pet.getAge() > 10) {
+                        pet.incrementAge();
+                    }
+                })
+                .forEach(System.out::println);
+    }
+
+    static void functionExemples(Scanner in) {
         Process process = new Process();
 
         // 1
@@ -264,12 +299,7 @@ public class Main {
         // Funtional with anonim
         ProcessWithFunctionalInterface processWithFunctionalInterface
                 = new ProcessWithFunctionalInterface(
-                        new Check() {
-                    @Override
-                    public void check(String s) {
-                        System.out.println(10 + "good");
-                    }
-                },
+                        new CheckRealisation(),
                         new Upper() {
                     @Override
                     public String upper(String s) {
