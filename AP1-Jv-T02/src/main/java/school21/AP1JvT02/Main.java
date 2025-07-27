@@ -3,6 +3,11 @@ package school21.AP1JvT02;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import school21.AP1JvT02.example.Process;
 import school21.AP1JvT02.example.ProcessWithFunctionalInterface;
@@ -429,5 +434,12 @@ public class Main {
                 processWithFuntionalIntreface1(lamda): %s
                 processWithFuntionalIntreface1(anonim classes): %s
                 """, processWithFunctionalInterface1.process(sss), processWithFunctionalInterface3.process(ssss));
+
+        Function<Integer, String> f1 = f11 -> f11.toString();
+        Consumer<Integer> f2 = System.out::println;
+        Predicate<String> f3 = f33 -> f33.length() > 10;
+        Supplier<Integer> f4 = () -> 10 * 10;
+        UnaryOperator<Integer> f5 = f55 -> f55 > 10 ? 15 : 20;
+        // Bifuntion etc...
     }
 }
