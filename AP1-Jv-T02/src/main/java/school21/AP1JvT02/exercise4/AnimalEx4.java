@@ -2,8 +2,8 @@ package school21.AP1JvT02.exercise4;
 
 public abstract class AnimalEx4 {
 
-    String name;
-    Integer age;
+    private String name;
+    private Integer age;
 
     public AnimalEx4(String name, Integer age) {
         this.name = name;
