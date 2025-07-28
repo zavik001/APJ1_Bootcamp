@@ -116,7 +116,7 @@ public class App {
         List<Number> nums123 = new ArrayList<>();
         List<? super Integer> ints123 = nums123;
 
-        // вообщем 
+        // в общем 
         // ? extends T (читай как T)
         // ? super T (пиши T)
         // источник: https://github.com/gravity182/Algorithms/blob/master/doc/java/JavaTypeVariance.MD
