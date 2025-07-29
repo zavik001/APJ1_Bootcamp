@@ -6,18 +6,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.example.animals.Cat;
 import org.example.animals.Dog;
+import org.example.thread.MyThread;
 
 public class App {
 
     static final Consumer<String> print = System.out::println;
+    static final Consumer<Number> printNumber = i -> System.out.println(i.intValue() + "");
+    static final Predicate<? extends Number> checkGreat = i -> i.intValue() > 100;
     static final Random random = new Random();
 
     public static void main(String[] args) {
         example1();
         example2();
+        example3();
+        example4();
+        example5();
+        example6();
     }
 
     static void example1() {
@@ -137,5 +146,81 @@ public class App {
             sum += num.longValue();
         }
         return sum;
+    }
+
+    static void example4() {
+        // Stream API
+        // package java.util.stream;
+        // public interface Stream<T extends Object> extends BaseStream<T, Stream<T>>
+        // Builder) public static interface Builder<T extends Object> extends Consumer<T>
+        Stream.Builder<Integer> strB = Stream.builder();
+        strB.add(100);
+        strB.add(1000);
+        Stream<Integer> strBB = strB.build();
+        strBB.forEach(printNumber);
+        Stream<Integer> generate = Stream.generate(random::nextInt);
+        generate.limit(100).forEach(printNumber);
+        // Stateless и Stateful операции
+        // 1. Операции без состояния, такие как map() и filter(), обрабатывают каждый элемент потока независимо от других.
+        // Они идеально подходит для паралельной обработки
+        // 2.
+    }
+
+    static void example5() {
+        // multithreding
+        // java.lang.Thread
+        // 1
+        MyThread myThread = new MyThread();
+        myThread.start();
+        System.out.println("Основной поток продолжает выполнение.");
+
+        // 2
+        Thread thread = new Thread(new MyThread());
+        thread.start();
+
+        // 3
+        Thread thread2 = new Thread(() -> System.out.println("Поток: " + Thread.currentThread().getName() + " startt"));
+        thread2.start();
+
+        // start() — метод класса Thread, который создает новый поток и вызывает
+        // метод run() в этом новом потоке. Вызов start() инициирует параллельное выполнение потока.
+        // run() — это метод, содержащий код, который будет выполнен в потоке.
+        // Если вызвать run() напрямую, без вызова start(), код будет выполнен в текущем потоке,
+        // как обычный метод, и новый поток не будет создан.
+        // join() - Синхронизация потоков
+        String s1 = "thread3";
+        Thread thread3 = new Thread(() -> {
+            System.out.println("поток: " + Thread.currentThread().getName() + " start");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.getMessage();
+            }
+            System.out.println("finish");
+        }, s1);
+        String s2 = "thread4";
+        Thread thread4 = new Thread(() -> {
+            System.out.println("поток: " + Thread.currentThread().getName() + " start");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.getMessage();
+            }
+            System.out.println("finish");
+        }, s2);
+        thread3.start();
+        thread4.start();
+        try {
+            thread3.join();
+            thread4.join();
+        } catch (InterruptedException e) {
+            e.getMessage();
+        }
+        System.out.println("main continue");
+    }
+
+    static void example6() {
+        // collection
+
     }
 }
