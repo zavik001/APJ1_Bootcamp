@@ -2,9 +2,18 @@ package org.example;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -13,6 +22,7 @@ import java.util.stream.Stream;
 
 import org.example.animals.Cat;
 import org.example.animals.Dog;
+import org.example.executor.SerialExecutor;
 import org.example.thread.MyThread;
 
 public class App {
@@ -30,7 +40,8 @@ public class App {
         // example3();
         // example4();
         // example5();
-        example6();
+        // example6();
+        example7();
     }
 
     static void example1() {
@@ -173,7 +184,7 @@ public class App {
     static void example5() {
         // multithreding
         // part 1
-        // java.lang.Thread
+        // Thread Runable
         // 1
         MyThread myThread = new MyThread();
         myThread.start();
@@ -470,5 +481,104 @@ public class App {
         // Livelock
         // Starvation
         // etc....
+    }
+
+    static void example7() {
+        // multithreding
+        // part 3
+        // ExecutorService, Callable, Future
+        // проблема с thread
+        // 1. Нельзя управлять ими централизованно
+        // 2. Нельзя получить результаты работы программы
+        // РЕШНИЕ 
+        // ExcutorService
+        // 1. Управляет пулом потоков
+        // 2. Ставит задачи в очередь
+        // 3. сама решает когда и каким потоком выпольнить задачу
+        // ЗАМЕНА ручному управлению потоками
+        // public interface ExecutorService extends Executor, AutoCloseable {}
+
+        // Начала
+        // Excutor
+        // public interface Executor {
+        // void execute(Runnable command);
+        // }
+        // раньше: - Runnable - Что делать — описание задачи (код, который должен выполниться)
+        // java 5 : - Executor - Как и когда делать — принимает Runnable и решает, как его выполнить (в каком потоке, когда и т.д.)
+        // раньше
+        Runnable task = () -> System.out.println("Hello");
+        new Thread(task).start(); // создаем поток вручную
+        // А теперь можно:
+        Runnable taskE = () -> System.out.println("Привет");
+        Executor executor = Executors.newSingleThreadExecutor();
+        executor.execute(taskE); // передаем задачу Executor'у
+
+        // Executor не требует, чтобы выполнение задачи было обязательно асинхронным.
+        // В самом простом случае - задача может быть выполнена немедленно в том же потоке, который её
+        Executor taskD = r -> r.run();
+
+        // Более часто задачи выполняются в другом потоке, не в потоке вызывающего кода.
+        Executor tadkC = r -> new Thread(r).start(); // каждый вызов execute() создаёт новый поток:
+
+        // Некоторые реализации Executor ограничивают, как и когда задачи выполняются.
+        // Пример SerialExecutor, который гарантирует последовательное выполнение задач, одну за другой:
+        SerialExecutor executor1 = new SerialExecutor(Executors.newSingleThreadExecutor());
+
+        // ExecutorService расширяет Executor: добавляет submit(), shutdown() и др.
+        // Абстрактная реализация AbstractExecutorService. Конкретная ThreadPoolExecutor.
+        ExecutorService ex1 = new ThreadPoolExecutor(
+                10,
+                100,
+                1000,
+                TimeUnit.SECONDS,
+                new LinkedBlockingDeque<>(1000),
+                Executors.defaultThreadFactory(),
+                new ThreadPoolExecutor.DiscardPolicy());
+        // 10 - corePoolSize - минимальное количество потоков, которые всегда остаются активным (даже если они ничего не делают)
+        // 100 - macimumPoolSize - максимальное количество потоков, которое может быть создано при высокой нагрузке
+        // 1000 -  // keepAliveTime — время (в заданных единицах), которое "лишние" потоки (выше corePoolSize) живут без задач перед завершением
+        // единицы измерения для keepAliveTime (секунды, миллисекунды и т.д.)
+        // new LinkedBlockingDeque<>() очередь задач сюда поподают задачи, если все core потоки занятны
+        // Executors.defaultThreadFactory(), фабрика для создания новых потоков (можно передать свою, чтобы задать имена, приоритет и т.п.)
+        // new ThreadPoolExecutor.DiscardPolicy() обработчик переполнения — что делать, если очередь полна и потоки достигли maximumPoolSize:
+        // Варианты:
+        // - AbortPolicy (по умолчанию) — выбрасывает исключение
+        // - CallerRunsPolicy — задача выполняется в том потоке, который вызвал submit()
+        // - DiscardPolicy — задача просто отбрасывается без ошибки
+        // - DiscardOldestPolicy — удаляет из очереди самую старую задачу и пытается добавить новую
+        // ЧТОБЫ КАЖДЫЙ РАЗ не писать все эти параметры вручную, есть класс Executors — ФАБРИКА, которая создает готовые экземпляры ExecutorService.
+
+        List<Callable<Integer>> taskds = new LinkedList<>();
+        for (int i = 0; i < 1000; i++) {
+            taskds.add(() -> {
+                int sum = 0;
+                for (int j = 0; j < 1_000_000; j++) {
+                    sum += j;
+                }
+                return sum;
+            });
+        }
+        taskds.stream().parallel()
+                .map(ex1::submit)
+                .forEachOrdered(i -> {
+                    try {
+                        System.out.println(i.get() + "->" + random.nextInt());
+                    } catch (ExecutionException | InterruptedException e) {
+                        e.getMessage();
+                    }
+                });
+        ex1.shutdown();
+        ((ExecutorService) executor).shutdown();
+        // ВАЖНО: пулы потоков ПЕРЕИСПОЛЬЗУЮТ потоки, а не создают их заново для каждой задачи.
+        // Это критично для производительности, потому что создание потока дорогая операция:
+        // - каждый поток создаётся через вызов ОС (pthread_create на Linux),
+        // - системе нужно выделить стек (~1 МБ),
+        // - поток нужно зарегистрировать в планировщике ОС,
+        // - а ещё переключение контекста между потоками тоже затратное.
+        // Поэтому лучше один раз создать пул с нужным числом потоков и просто переиспользовать их,
+        // отправляя задачи через submit() — это быстро и экономит ресурсы.
+
+        // etc ... На самом деле, про Executor и всю инфраструктуру вокруг можно написать целую книгу.
+        // Но вопрос - есть ли в этом смысл....
     }
 }
