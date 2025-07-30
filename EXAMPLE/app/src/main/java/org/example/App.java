@@ -6,11 +6,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.SplittableRandom;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -23,6 +25,8 @@ import java.util.stream.Stream;
 import org.example.animals.Cat;
 import org.example.animals.Dog;
 import org.example.executor.SerialExecutor;
+import org.example.forkjoinpoll.CountNodesTask;
+import org.example.forkjoinpoll.TreeNode;
 import org.example.thread.MyThread;
 
 public class App {
@@ -31,6 +35,7 @@ public class App {
     static final Consumer<Number> printNumber = i -> System.out.println(i.intValue() + "");
     static final Predicate<? extends Number> checkGreat = i -> i.intValue() > 100;
     static final Random random = new Random();
+    static final SplittableRandom randomm = new SplittableRandom();
     static long counter = 0;
     static boolean flag = true;
 
@@ -41,7 +46,8 @@ public class App {
         // example4();
         // example5();
         // example6();
-        example7();
+        // example7();
+        example8();
     }
 
     static void example1() {
@@ -486,6 +492,7 @@ public class App {
     static void example7() {
         // multithreding
         // part 3
+        // java 5
         // ExecutorService, Callable, Future
         // проблема с thread
         // 1. Нельзя управлять ими централизованно
@@ -562,7 +569,7 @@ public class App {
                 .map(ex1::submit)
                 .forEachOrdered(i -> {
                     try {
-                        System.out.println(i.get() + "->" + random.nextInt());
+                        System.out.println(i.get() + "->" + randomm.nextInt());
                     } catch (ExecutionException | InterruptedException e) {
                         e.getMessage();
                     }
@@ -579,6 +586,96 @@ public class App {
         // отправляя задачи через submit() — это быстро и экономит ресурсы.
 
         // etc ... На самом деле, про Executor и всю инфраструктуру вокруг можно написать целую книгу.
-        // Но вопрос - есть ли в этом смысл....
+        // ScheduledExecutorService
+        // 
+    }
+
+    static void example8() {
+        // multithreding
+        // part 4
+        // ForkJoinPool java 7
+        // разделяй и властвуй
+        // public class ForkJoinPool extends AbstractExecutorService {
+        // не удивительно что он расширяет функционал ExecutorService
+
+        // ПРОБЛЕМА:
+        // когда у нас ThreadPoolExecutor у нас есть очевидная проблема:
+        // поток берет тяжелую задачу и он там зависает
+        // и если у нас данные общие-(без него общую задачу не собрать) = это ПРОБЛЕМА
+        // остальные потоки могут уже все сделать и просто сидеть ждать
+        // РЕШЕНИЕ:
+        // ЕСЛИ ЗАДАЧА ДЕЛИТСЯ НА МАЛЕНЬКИЕ ПОДЗАДАЧИ → ForkJoinPool как раз тут и заходит
+        // он делит рекурсивно задачу на мелкие куски
+        // у каждого потока своя очередь (deque)
+        // если поток освободился — он не сидит без дела, а крадёт задачу из очереди другого (work stealing)
+        // вот и всё — максимальная загрузка ядер
+        // НО:
+        // Если задача не делится ForkJoin ничем не поможет, это просто другой Executor
+        // тут идея БЫСТРО ВЫПОЛНИТЬ МАЛЕНЬКИЕ ЗАДАЧИ, разумно разделяя на части
+        // ВАЖНЫЕ ДЕТАЛИ:
+        // 1. Очереди и Work-Stealing
+        //    - У каждого потока своя двухсторонняя очередь (deque)
+        //    - Поток берёт задачи с головы своей очереди (LIFO) — это быстрее для кэша
+        //    - Если поток освободился и в своей очереди задач нет он крадет задачи из хвоста очереди другого потока (FIFO)
+        //    - Это уменьшает простаивание потоков максимальная загрузка CPU
+        // 2. Разделение задачи
+        //    - ForkJoinPool не делит задачи автоматически — это делает наш метод compute()
+        //    - Если не делит адекватно никакого выигрыша не будет
+        //    - Обычно используется паттерн "разделяй до порога":
+        //          if (size < THRESHOLD) { // маленькая задача
+        //              делаем напрямую
+        //          } else {
+        //              делим и форкаем
+        //          }
+        // 3. Асинхронный режим (asyncMode)
+        //    - По умолчанию LIFO (последние задачи выполняются первыми)
+        //    - Если в конструкторе указать asyncMode=true будет FIFO
+        //    - Это полезно для асинхронных и потоково-ориентированных задач
+        // 4. Ограничение на блокирующие вызовы
+        //    - НЕЛЬЗЯ блокировать потоки ForkJoinPool (Thread.sleep(), синхронное IO и т.д.)
+        //    - Это ворует потоки из пула общее выполнение замедляется
+        //    - Для блокирующих операций есть ForkJoinPool.managedBlock() — он временно увеличивает число потоков
+        // 5. Разница с обычным ExecutorService
+        //    - ExecutorService — "запланировал и забыл", задачи тупо из общей очереди
+        //    - ForkJoinPool — "разделил и выполнил", задачи сами порождают новые задачи
+        //    - Автоматический баланс нагрузки через воровство задач
+        // ПРИМЕР:
+        // ЗАДАЧА — есть огромное дерево, надо посчитать количество узлов
+        //    - не знаем заранее глубину и количество узлов
+        //    - некоторые ветви очень длинные (дорого обходить), некоторые короткие
+        // заранее нарезать ExecutorService-ом куски — хрень получится
+        // ForkJoinPool решает тем что делит динамически (рекурсивно) + балансирует работу потоков (если реализовано адекватно)
+        TreeNode root = new TreeNode();
+        for (int i = 0; i < 100; i++) {
+            TreeNode child = new TreeNode();
+            for (int j = 0; j < 100; j++) {
+                child.addChild(new TreeNode());
+            }
+            root.addChild(child);
+        }
+
+        ForkJoinPool pool = new ForkJoinPool(8); // создаём пул на 8 потоков
+        int result = pool.invoke(new CountNodesTask(root));
+        System.out.println("всего узлов: " + result);
+        try {
+            pool.close();
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+        // new ForkJoinPool():
+        //   - parallelism (число потоков, по дефолту = Runtime.getRuntime().availableProcessors())
+        //   - ForkJoinWorkerThreadFactory (фабрика потоков, можно своё)
+        //   - UncaughtExceptionHandler (обработка исключений)
+        //   - asyncMode (false по умолчанию, если true - FIFO)
+        // ForkJoinTask — базовый абстрактный класс
+        // Есть 2 готовых типа:
+        //    - RecursiveTask<V> (с возвращаемым значением)
+        //    - RecursiveAction (без возвращаемого значения)
+        // МЕТОДЫ:
+        // pool.invoke(task) — запускает и ждёт результата
+        // pool.submit(task) — запускает асинхронно
+        // fork() — отправить подзадачу на выполнение
+        // join() — подождать результат подзадачи
+        // invokeAll(tasks) — запустить пачку задач
     }
 }
