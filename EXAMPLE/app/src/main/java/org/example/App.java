@@ -1,12 +1,20 @@
 package org.example;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.SplittableRandom;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -47,7 +55,10 @@ public class App {
         // example5();
         // example6();
         // example7();
-        example8();
+        // example8();
+        // example9();
+        // example10();
+        example11();
     }
 
     static void example1() {
@@ -658,6 +669,7 @@ public class App {
         int result = pool.invoke(new CountNodesTask(root));
         System.out.println("всего узлов: " + result);
         try {
+            System.out.println("хмм: " + pool.commonPool());
             pool.close();
         } catch (SecurityException e) {
             e.printStackTrace();
@@ -677,5 +689,188 @@ public class App {
         // fork() — отправить подзадачу на выполнение
         // join() — подождать результат подзадачи
         // invokeAll(tasks) — запустить пачку задач
+    }
+
+    static void example9() {
+        // multithreading
+        // part 5
+        // java 8: CompletableFuture, parallelstream
+    }
+
+    static void example10() {
+        // mutithreadin
+        // part 6
+        // java 21: Virtual Threads
+    }
+
+    static void example11() {
+        // Collections
+        // JCF
+        // Java Collection Framework (JCF) представляет собой набор классов и интерфейсов,
+        // предназначенных для хранения и обработки данных в оперативной памяти.
+
+        // Iterable - базовый интерфес для всех коллекция в Java
+        // Он предоставляет метод iterator(), который возвращает объект типа Iterator, необходимого для перебора элементов коллекции.
+        // public interface Iterable<T> {
+        // Iterator<T> iterator();
+        // }
+        // Интерфеqс Iterator предоставляет 4 ключевых метода для работы с элементами:
+        // public interface Iterator<E> {
+        //    boolean hasNext();
+        //    E next();
+        //    default void remove()
+        //    default void forEachRemaining(Consumer<? super E> action)
+        ArrayList<Integer> arr1 = new ArrayList<>();
+        arr1.add(10);
+        arr1.add(11);
+        Iterator<Integer> ir = arr1.iterator();
+        ir.forEachRemaining(printNumber);
+        while (ir.hasNext()) {
+            print.accept(ir.next() + "");
+            ir.remove();
+        }
+        print.accept(arr1.size() + " " + ir.hasNext());
+
+        // Эти интерфейсы позволяет коллекциям быть целевыми для использования в цикле for-each, упрошает итерацию по элементам.
+        List<String> list1 = List.of("one", "teo", "three");
+        for (String e : list1) {
+            print.accept(e);
+        }
+        // в for - each используется iterator для выполнения цикла
+
+        // Исключение ConcurrentModificationException
+        // Исключение ConcurrentModificationException возникает когда структура коллекции изменяется во время коллекции
+        // это может произойти если коллекция модифицируется через другой поток или даже в том же потоке
+        List<String> list2 = new ArrayList<>();
+        list2.add("add1");
+        list2.add("add2");
+        list2.add("add3");
+        for (String s : list2) {
+            if ("add1".equals(s)) {
+                // list2.remove(s); // CuncurrentModificatonException
+            }
+        }
+
+        // Интерфейс Collection<T>
+        // public interface Collection<E> extends Iterable<E> {
+        // расширяет интерфейс Itarable добавляет новые методы // size(), isEmpty(), contains(Object), add(E), remove(Object), containsAll(Collection), addAll(Collection), removeAll(Collection), retainAll(Collection), clear(), iterator(), forEach(Consumer), spliterator(), toArray(), toArray(T[]), stream(), parallelStream(), removeIf(Predicate), of(), of(E), of(E,E), of(E,E,E), of(E,E,E,E), of(E,E,E,E,E), of(E,E,E,E,E,E), of(E,E,E,E,E,E,E), of(E,E,E,E,E,E,E,E), of(E,E,E,E,E,E,E,E,E), of(E...)
+        Collection<Integer> col = new ArrayList<>();
+
+        // Интерфейс List<E> представляет упорядоченную коллекцию
+        // public interface List<E> extends SequencedCollection<E> {}
+        // public interface SequencedCollection<E> extends Collection<E> {} // java 21+
+        List<Integer> listt = new ArrayList<>();
+
+        // Интерфейс Set<E> коллекция без дубликатов. Каждый элемент в Set уникален.
+        // public interface Set<E> extends Collection<E> {}
+        Set<Integer> set = new TreeSet<>();
+        // Если бы тут был HashSet я уже показывал в example2(), там была бы проблема если не переопределить правильно
+        // equals и hashcode
+        // А тут у нас TreeSet(и для HashSet также верно некоторые моменты) и история другая: 
+        // ЭЛЕМЕНТЫ СОРТИРУЮТСЯ по compareTo() 
+        // Если после добавления элемента в TreeSet мы меняем поля, которые влияют на порядок (compareTo),
+        // коллекция может начать вести себя непредсказуемо: 
+        //    - порядок "сломается"
+        //    - contains() может вернуть false, хотя элемент явно есть
+        //    - поведение итератора станет странным
+        // И даже может случиться что в Set дубликаты
+        print.accept("Set:");
+        Cat cat1 = new Cat("cat1", 1);
+        Cat cat2 = new Cat("cat2", 2);
+        Cat cat3 = new Cat("cat3", 3);
+        Set<Cat> cats = new TreeSet<>(Set.of(cat1, cat2, cat3));
+        print.accept(cats.toString());
+
+        cat2.setAge(-123);
+        cat2.setName("cat-123");
+        print.accept(cats.toString());
+        print.accept(cats.contains(cat2) + "");
+
+        cat2.setAge(1);
+        cat2.setName("cat1");
+        print.accept(cats.toString());
+
+        // Интерфейс Queue<E> предоставляет функциональность очереди — структуры данных, работающей по принципу “первый пришел, первый обслужен” (FIFO).
+        // public interface Queue<E> extends Collection<E> {}
+        print.accept("Queue:");
+        Queue<Integer> que = new LinkedList<>();
+        que.add(78);
+        que.offer(10);
+        que.offer(11);
+        que.offer(1);
+        print.accept(que.toString());
+        print.accept(que.poll() + " <- poll()");
+        print.accept(que.toString());
+        print.accept(que.peek() + " <- peek()");
+        print.accept(que.toString());
+        print.accept(que.remove() + " remove()");
+        print.accept(que.toString());
+
+        // Интерфейс Deque<E> (Double Ended Queue) расширяет Queue и представляет двустороннюю очередь, где элементы могут быть добавлены и удалены как с начала, так и с конца.
+        // public interface Deque<E> extends Queue<E>, SequencedCollection<E> {} 
+        print.accept("Deque:");
+        Deque<Integer> deq = new ArrayDeque<>();
+        deq.add(10);
+        deq.addFirst(1);
+        deq.addFirst(2);
+        deq.addLast(15);
+        deq.addLast(16);
+        deq.offer(1000);
+        deq.offerFirst(900);
+        deq.offerFirst(901);
+        deq.offerLast(1100);
+        deq.offerLast(1101);
+        deq.add(99999);
+        print.accept(deq.toString());
+        print.accept(deq.getFirst() + " <- getFirst()");
+        print.accept(deq.getLast() + " <- getLast()");
+        print.accept(deq.peekFirst() + " <- peekFirst()");
+        print.accept(deq.peekLast() + " <- peekLast()");
+        print.accept(deq.toString());
+        print.accept(deq.poll() + " <- poll");
+        print.accept(deq.pop() + " <- pop");
+        print.accept(deq.toString());
+        // Разница в поведении методов при ошибках, одни методы возвращают false/null, другие выбрасывают исключения
+
+        // Интерфейс Map<K, V> представляет коллекцию пар “ключ-значение”, где каждому ключу сопоставлено одно значение.
+        // отличается от других интерфейсов коллекций тем, что не является потомком интерфейса Collection.
+        // public interface Map<K, V> {}
+        print.accept("Map::");
+        Map<Integer, Integer> map = new TreeMap<>();
+        map.put(10, 100);
+        map.put(11, 101);
+        map.put(12, 102);
+        map.putIfAbsent(13, 103);
+        map.putIfAbsent(12, 1001);
+        print.accept(map.toString());
+        print.accept(map.containsKey(12) + " <- containsKey(12)");
+        print.accept(map.containsValue(100) + " <- containsValue(100)");
+        print.accept(map.getOrDefault(1000, 123) + " <- getOrDefault(1000, 123)");
+        print.accept(map.get(10) + " <- get(10)");
+        print.accept(map.toString());
+
+        Set<Integer> sMap = map.keySet();
+        Collection<Integer> cMap = map.values();
+
+        print.accept(sMap.toString() + " <- public Set<K> keySet()");
+        print.accept(cMap.toString() + " <- Collection<V> values()");
+
+        // public interface Map<K, V> {
+        //      public static interface Entry<K, V> {}
+        // }        
+        Set<Map.Entry<Integer, Integer>> entryMap = map.entrySet();
+        print.accept(entryMap.toString() + " <- Set<Entry<K, V>> entrySet();");
+
+        // Реализации коллекций
+        // ArrayList это динамический массив, который хранит свои элементы внутри обычного массива объектов (Object[])
+        // public class ArrayList<E> extends AbstractList<E> implements List<E>, RandomAccess, Cloneable, Serializable
+        // transient Object[] elementData; }
+        // Поле elementData помечено как transient для оптимизации сериализации:
+        // - Реальный размер массива (capacity) обычно больше количества элементов (size)
+        // - Чтобы не сериализовать пустые ячейки массива (null-элементы)
+        // - ArrayList переопределяет writeObject/readObject для сериализации только нужных элементов
+        // ArrayList не синхронизирован, поэтому не является потокобезопасным.
+        ExecutorService ex1 = Executors.newFixedThreadPool(2);
+        
     }
 }

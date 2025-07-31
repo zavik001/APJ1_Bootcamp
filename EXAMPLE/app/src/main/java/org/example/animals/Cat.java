@@ -2,7 +2,7 @@ package org.example.animals;
 
 import java.util.Objects;
 
-public class Cat {
+public class Cat implements Comparable<Cat> {
 
     private String name;
     private Integer age;
@@ -12,8 +12,16 @@ public class Cat {
         this.age = age;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getName() {
         return this.name;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
     }
 
     public Integer getAge() {
@@ -41,6 +49,11 @@ public class Cat {
 
     @Override
     public String toString() {
-        return String.format("cat name = %s, age = %d", name, age);
+        return String.format("cat name = %s age = %d", name, age);
+    }
+
+    @Override
+    public int compareTo(Cat o) {
+        return Integer.compare(this.age, o.age);
     }
 }
