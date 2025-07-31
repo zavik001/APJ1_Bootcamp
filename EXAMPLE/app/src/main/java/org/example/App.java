@@ -1,8 +1,12 @@
 package org.example;
 
+import java.io.Serializable;
+import java.util.AbstractMap;
+import java.util.AbstractSequentialList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -12,9 +16,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.SplittableRandom;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.Vector;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -36,6 +42,7 @@ import org.example.executor.SerialExecutor;
 import org.example.forkjoinpoll.CountNodesTask;
 import org.example.forkjoinpoll.TreeNode;
 import org.example.thread.MyThread;
+import org.w3c.dom.Node;
 
 public class App {
 
@@ -706,6 +713,7 @@ public class App {
     static void example11() {
         // Collections
         // JCF
+        // part 1
         // Java Collection Framework (JCF) представляет собой набор классов и интерфейсов,
         // предназначенных для хранения и обработки данных в оперативной памяти.
 
@@ -870,7 +878,100 @@ public class App {
         // - Чтобы не сериализовать пустые ячейки массива (null-элементы)
         // - ArrayList переопределяет writeObject/readObject для сериализации только нужных элементов
         // ArrayList не синхронизирован, поэтому не является потокобезопасным.
-        ExecutorService ex1 = Executors.newFixedThreadPool(2);
+        ArrayList<Integer> arr = new ArrayList<>(10);
+        // initialCapacity = 10;
+        // по мере добавление новых элементов в ArrayList его емкость увиличивается автоматически
+        // при увиличение размера создается новый массив и туда копируются все старые элементы
+        // - ArrayList допускает хранение null значний
+        // доступ по индексу за O(1);
+        // удаление элемента в худшем случае за O(n);
+
+        // LinkedList двусвязанный список
+        // 
+        // public class LinkedList<E>
+        // extends AbstractSequentialList<E>
+        // implements List<E>, Deque<E>, Cloneable, java.io.Serializable
+        // {   
+        // /**
+        //  * Pointer to first node.
+        //  */
+        // transient Node<E> first;
+
+        // /**
+        //  * Pointer to last node.
+        //  */
+        // transient Node<E> last;
+        LinkedList<Integer> lin = new LinkedList<>();
+        // вставка/удаление не учитывая посик за O(1);
+        // посик элемента в худшем случае за O(N);
+
+
+        // HashMap - хранит данные в виде ключ-значение
+        // public class HashMap<K,V> extends AbstractMap<K,V>
+        // implements Map<K,V>, Cloneable, Serializable {}
+        // transient Node<K,V>[] table;
+        HashMap<Integer, Integer> mapp = new HashMap<>();
+        // внутри hashmap использует массив где каждый элемент Node
+        // static class Node<K,V> implements Map.Entry<K,V> {
+        // final int hash; // хеш код
+        // final K key; // ключ
+        // V value; // значение 
+        // Node<K,V> next; } // ссылка на следущий узел если есть коллизии
+        // У HashMap есть два ключевых параметра, которые влияют на производительность это начальная емкость и коэфицент загрузки
+        print.accept(mapp.put(10, 100) + " ");
+        print.accept(mapp.put(10, 1000) + " "); // @return the previous value associated with {@code key}
+            /**
+            //  * Associates the specified value with the specified key in this map.
+            //  * If the map previously contained a mapping for the key, the old
+            //  * value is replaced.
+            //  *
+            //  * @param key key with which the specified value is to be associated
+            //  * @param value value to be associated with the specified key
+            //  * @return the previous value associated with {@code key}, or
+            //  *         {@code null} if there was no mapping for {@code key}.
+            //  *         (A {@code null} return can also indicate that the map
+            //  *         previously associated {@code null} with {@code key}.)
+            //  */
+            // public V put(K key, V value) {
+            //     return putVal(hash(key), key, value, false, true);
+            // }
+        // В общем обычная хеш таблица
+
+
+        // TreeMap 
+        TreeMap<Integer, Integer> treeMap = new TreeMap<>();
+        treeMap.put(100, 100);
+        // на основе лежит красно-черное дерево
+        // узлы дерево у нас такие 
+        // satic final class Entry<K,V> implements Map.Entry<K,V> {
+        // K key;
+        // V value;
+        // Entry<K,V> left;
+        // Entry<K,V> right;
+        // Entry<K,V> parent;
+        // boolean color = BLACK;}
+        // добавление/удаление/вставка за O(long N);
         
+        // HashSet // TreeSet
+        // etc....
+
+        
+        // Сортировка коллекций
+        // Интерфейс Comparator<T>
+        // Этот интерфейс позволяет вам создать внешний "сортировщик" (компаратор),
+        // который можно передать в методы сортировки.
+        // Создайте класс, который реализует интерфейс Comparator, и определите метод compare(T o1, T o2) для сравнения двух объектов.
+        // @FunctionalInterface
+        // public interface Comparator<T> {
+        //  int compare(T o1, T o2); }
+        // Если нужно отсортировать элементы в обратном порядке, вместо создания нового компаратора можно использовать метод reversed()
+        Comparator<Cat> com = (o1, o2) -> o1.getAge() - o2.getAge();
+        com.reversed();
+
+        // Интерфейс Comparable<T>
+        // Если вы хотите сделать сортировку “встроенной” в ваш класс, можно реализовать интерфейс 
+        // Comparable у самого класса, который нужно сортировать.
+
+        // etc. ..... .
     }
 }
