@@ -13,6 +13,12 @@ public class Game {
         status = GameStatus.IN_PROGRESS;
     }
 
+    public Game(String id, GameStatus status, Matrix matrix) {
+        this.id = id;
+        this.status = status;
+        this.matrix = matrix;
+    }
+
     public void setMatrix(int[][] matrix) {
         this.matrix.setMatrix(matrix);
     }
