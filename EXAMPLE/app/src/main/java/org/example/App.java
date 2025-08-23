@@ -1,8 +1,5 @@
 package org.example;
 
-import java.io.Serializable;
-import java.util.AbstractMap;
-import java.util.AbstractSequentialList;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,13 +14,13 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.Spliterator;
 import java.util.SplittableRandom;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.Vector;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -37,17 +34,17 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-
 import org.example.animals.Cat;
 import org.example.animals.Dog;
 import org.example.executor.SerialExecutor;
 import org.example.forkjoinpoll.CountNodesTask;
 import org.example.forkjoinpoll.TreeNode;
-import org.example.thread.MyThread;
 import org.example.splIterator.TreeNodeCat;
 import org.example.splIterator.TreeSpliterator;
+import org.example.thread.MyThread;
 
 public class App {
 
@@ -80,9 +77,7 @@ public class App {
         for (int i = 0; i < 10; i++) {
             cats.put(new Cat(random.nextInt() + "", random.nextInt()), "cat" + random.nextInt());
         }
-        cats.entrySet()
-                .stream()
-                .map(entry -> entry.getKey().toString() + entry.getValue())
+        cats.entrySet().stream().map(entry -> entry.getKey().toString() + entry.getValue())
                 .forEach(print);
     }
 
@@ -100,7 +95,8 @@ public class App {
 
         print.accept(r.equals(rr) + "");
 
-        print.accept(dogs.getOrDefault(rr, "rr such element does not exist in map ") + rr.toString());
+        print.accept(
+                dogs.getOrDefault(rr, "rr such element does not exist in map ") + rr.toString());
         print.accept(r.toString() + " value: " + dogs.get(r));
     }
 
@@ -241,7 +237,8 @@ public class App {
         thread.start();
 
         // 3
-        Thread thread2 = new Thread(() -> System.out.println("Поток: " + Thread.currentThread().getName() + " startt"));
+        Thread thread2 = new Thread(
+                () -> System.out.println("Поток: " + Thread.currentThread().getName() + " startt"));
         thread2.start();
 
         // start() — метод класса Thread, который создает новый поток и вызывает
@@ -499,37 +496,26 @@ public class App {
         /*
          * Здесь возникает проблема видимости изменений между потоками.
          * 
-         * Подробное объяснение:
-         * 1. Каждый поток имеет свой стек и может кэшировать значения переменных
-         * 2. Изменение flag в главном потоке может НЕ стать сразу видимым для worker
-         * потока
-         * 3. Причины:
-         * - Оптимизации процессора (кэширование в регистрах CPU)
-         * - Отсутствие happens-before связи между потоками
-         * - JIT-компилятор может оптимизировать чтение flag в цикле while
+         * Подробное объяснение: 1. Каждый поток имеет свой стек и может кэшировать значения
+         * переменных 2. Изменение flag в главном потоке может НЕ стать сразу видимым для worker
+         * потока 3. Причины: - Оптимизации процессора (кэширование в регистрах CPU) - Отсутствие
+         * happens-before связи между потоками - JIT-компилятор может оптимизировать чтение flag в
+         * цикле while
          * 
-         * Последствия:
-         * - Worker поток может продолжать работать бесконечно
-         * - Программа ведет себя непредсказуемо
-         * - Ошибка трудно воспроизводима (зависит от железа/JVM)
+         * Последствия: - Worker поток может продолжать работать бесконечно - Программа ведет себя
+         * непредсказуемо - Ошибка трудно воспроизводима (зависит от железа/JVM)
          * 
-         * Решение:
-         * Использовать volatile для переменной flag:
-         * volatile boolean flag = true;
+         * Решение: Использовать volatile для переменной flag: volatile boolean flag = true;
          * 
-         * Почему volatile работает:
-         * 1. Гарантирует запись в основную память (не только в кэш CPU)
-         * 2. Создает happens-before связь между потоками
-         * 3. Запрещает переупорядочивание операций вокруг volatile-переменной
+         * Почему volatile работает: 1. Гарантирует запись в основную память (не только в кэш CPU)
+         * 2. Создает happens-before связь между потоками 3. Запрещает переупорядочивание операций
+         * вокруг volatile-переменной
          * 
-         * Альтернативы (менее подходящие для этого случая):
-         * - synchronized (избыточен для простого флага)
-         * - AtomicBoolean (работает, но сложнее чем нужно)
-         * - Lock (слишком тяжеловесный)
+         * Альтернативы (менее подходящие для этого случая): - synchronized (избыточен для простого
+         * флага) - AtomicBoolean (работает, но сложнее чем нужно) - Lock (слишком тяжеловесный)
          * 
-         * Когда НЕ использовать volatile:
-         * - Для составных операций (i++)
-         * - Когда несколько потоков могут менять переменную
+         * Когда НЕ использовать volatile: - Для составных операций (i++) - Когда несколько потоков
+         * могут менять переменную
          */
 
         // Livelock
@@ -586,13 +572,8 @@ public class App {
         // ExecutorService расширяет Executor: добавляет submit(), shutdown() и др.
         // Абстрактная реализация AbstractExecutorService. Конкретная
         // ThreadPoolExecutor.
-        ExecutorService ex1 = new ThreadPoolExecutor(
-                10,
-                100,
-                1000,
-                TimeUnit.SECONDS,
-                new LinkedBlockingDeque<>(1000),
-                Executors.defaultThreadFactory(),
+        ExecutorService ex1 = new ThreadPoolExecutor(10, 100, 1000, TimeUnit.SECONDS,
+                new LinkedBlockingDeque<>(1000), Executors.defaultThreadFactory(),
                 new ThreadPoolExecutor.DiscardPolicy());
         // 10 - corePoolSize - минимальное количество потоков, которые всегда остаются
         // активным (даже если они ничего не делают)
@@ -626,15 +607,13 @@ public class App {
                 return sum;
             });
         }
-        taskds.stream().parallel()
-                .map(ex1::submit)
-                .forEachOrdered(i -> {
-                    try {
-                        System.out.println(i.get() + "->" + randomm.nextInt());
-                    } catch (ExecutionException | InterruptedException e) {
-                        e.getMessage();
-                    }
-                });
+        taskds.stream().parallel().map(ex1::submit).forEachOrdered(i -> {
+            try {
+                System.out.println(i.get() + "->" + randomm.nextInt());
+            } catch (ExecutionException | InterruptedException e) {
+                e.getMessage();
+            }
+        });
         ex1.shutdown();
         ((ExecutorService) executor).shutdown();
         // ВАЖНО: пулы потоков ПЕРЕИСПОЛЬЗУЮТ потоки, а не создают их заново для каждой
@@ -755,7 +734,221 @@ public class App {
     static void example9() {
         // multithreading
         // part 5
-        // java 8: CompletableFuture, parallelstream
+        // java 8: CompletableFuture, parallelStream
+
+        // CompletableFuture
+        // CompletableFuture — это класс из Java 8 (пакет java.util.concurrent), который
+        // представляет асинхронный вычислительный процесс.
+        // Он реализует интерфейсы Future и CompletionStage.
+        // public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {}
+        // Основная идея: позволяет писать асинхронный код в декларативном стиле,
+        // комбинируя задачи, обрабатывая исключения и результаты.
+        // В отличие от простого Future (из Java 5), CompletableFuture можно завершать
+        // вручную, цепочкой обрабатывать результаты и комбинировать несколько фьючеров.
+        // Ключевые особенности:
+        // - Асинхронное выполнение: задачи выполняются в пуле потоков (по умолчанию
+        // ForkJoinPool.commonPool()).
+        // - Цепочки: thenApply, thenAccept, thenRun — для трансформации результатов.
+        // - Комбинирование: thenCombine, thenCompose — для объединения нескольких
+        // CompletableFuture.
+        // - Обработка ошибок: exceptionally, handle — для исключений.
+        // - Завершение: complete, completeExceptionally — ручное завершение.
+        // - Таймауты: orTimeout, completeOnTimeout (с Java 9, но для Java 8 используйте
+        // внешние механизмы).
+        // Преимущества:
+        // - Избегает callback hell (как в старом стиле с Future).
+        // - Легко строить пайплайны асинхронных операций.
+        // - Интеграция с lambdas и streams.
+        // Минусы:
+        // - Может быть сложно отлаживать (асинхронность).
+        // - Нужно быть осторожным с блокирующими операциями внутри.
+
+        // Пример 1: Базовое создание и получение результата
+        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return "Результат асинхронной задачи";
+        });
+
+        try {
+            String result = future.get();
+            System.out.println(result);
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        // Пример 2: Цепочка операций
+        CompletableFuture<Integer> chainFuture =
+                CompletableFuture.supplyAsync(() -> 10).thenApply(x -> x * 2).thenApply(x -> x + 5);
+
+        try {
+            System.out.println("Результат цепочки: " + chainFuture.get());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        // Пример 3: Обработка исключений
+        CompletableFuture<String> errorFuture = CompletableFuture.supplyAsync(() -> {
+            if (true)
+                throw new RuntimeException("Ошибка в задаче");
+            return "Успех";
+        }).exceptionally(ex -> {
+            System.out.println("Обработано исключение: " + ex.getMessage());
+            return "Восстановленный результат";
+        });
+
+        try {
+            System.out.println(errorFuture.get());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        // Пример 4: Комбинирование двух фьючеров
+        CompletableFuture<String> future1 = CompletableFuture.supplyAsync(() -> "Java");
+        CompletableFuture<String> future2 = CompletableFuture.supplyAsync(() -> "JJJJ");
+
+        CompletableFuture<String> combined =
+                future1.thenCombine(future2, (s1, s2) -> s1 + " " + s2);
+
+        try {
+            System.out.println(combined.get());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        // Пример 5: Асинхронное завершение
+        CompletableFuture<String> manualFuture = new CompletableFuture<>();
+        // В другом потоке или позже:
+        manualFuture.complete("Завершено вручную");
+        try {
+            System.out.println(manualFuture.get());
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        // Важные методы:
+        // - supplyAsync(Supplier<U> supplier) — запускает задачу, возвращающую
+        // значение.
+        // - runAsync(Runnable runnable) — запускает задачу без возврата.
+        // - thenAccept(Consumer<? super T> action) — обрабатывает результат (void).
+        // - thenRun(Runnable action) — выполняет после, без доступа к результату.
+        // - allOf(CompletableFuture<?>... cfs) — ждёт все фьючеры.
+        // - anyOf(CompletableFuture<?>... cfs) — ждёт любой.
+        // Пул потоков: по умолчанию ForkJoinPool.commonPool(), но можно указать свой:
+        // supplyAsync(supplier, executor).
+
+
+
+        // parallelStream
+        // parallelStream — это метод интерфейса Collection (из Java 8), который возвращает
+        // параллельный Stream.
+        // Основная идея: автоматически распараллеливает обработку коллекций на несколько потоков
+        // для ускорения (на многоядерных CPU).
+        // Под капотом использует ForkJoinPool (commonPool() по умолчанию).
+        // Ключевые особенности:
+        // - Параллелизм: операции (map, filter, reduce) выполняются параллельно.
+        // - Автоматическое разделение: stream делится на части (splitting), обрабатывается в
+        // ForkJoinPool.
+        // - Сохранение порядка: по умолчанию сохраняет порядок элементов (если коллекция
+        // упорядочена), но можно использовать unordered() для ускорения.
+        // - Thread-safe: операции должны быть stateless и non-interfering (не менять источник).
+        // - Ленивость: как и sequential stream, вычисления происходят только при терминальной
+        // операции (collect, reduce и т.д.).
+        // Преимущества:
+        // - Простота: один вызов parallel() — и всё параллельно.
+        // - Хорошо для CPU-bound задач (вычисления), на больших данных.
+        // Минусы:
+        // - Overhead: на маленьких коллекциях может быть медленнее sequential.
+        // - Не для IO-bound (блокирующие операции замедлят).
+        // - Потенциальные проблемы с состоянием (если операции не чистые).
+        // - Порядок выполнения не гарантирован (кроме forEachOrdered).
+
+        // Дополнительно: Что НЕЛЬЗЯ делать с parallelStream (или делать с осторожностью)
+        // Parallel streams предназначены для stateless, non-interfering операций. Нарушение правил
+        // может привести к неверным результатам, race conditions или низкой производительности.
+        // 1. Избегайте stateful промежуточных операций:
+        // - sorted(): Сортировка в параллельном стриме требует сбора всех элементов, что убивает
+        // параллелизм. Лучше сортировать sequentially после parallel обработки.
+        // - distinct(): Требует отслеживания уникальности, что неэффективно в параллели (нужен
+        // общий state).
+        // - limit() / skip(): Эти операции зависят от порядка, в параллели могут быть неэффективны
+        // или даже неверными, если стрим не ordered.
+        // Почему: Parallel stream делит данные на chunks, обрабатывает независимо, но stateful ops
+        // требуют глобального состояния или порядка, что приводит к overhead (merging,
+        // synchronization).
+        // Решение: Используйте unordered() для ускорения, если порядок не важен, или делайте
+        // stateful ops sequentially.
+
+        // Пример плохого использования: sorted() в parallel
+        List<Integer> unsorted = Arrays.asList(5, 3, 8, 1, 9);
+        List<Integer> badSorted = unsorted.parallelStream().sorted() // Overhead: собирает все,
+                                                                     // сортирует — параллелизм
+                                                                     // бесполезен
+                .collect(Collectors.toList());
+        System.out.println(badSorted); // [1, 3, 5, 8, 9] — работает, но медленно для больших данных
+
+        // Лучше:
+        List<Integer> goodSorted = unsorted.parallelStream().map(x -> x * 2) // Параллельная
+                                                                             // stateless оп
+                .sequential() // Переключаем на sequential для sorted
+                .sorted().collect(Collectors.toList());
+
+        // 2. Не модифицируйте источник коллекции во время стрима:
+        // - Streams не предназначены для модификации источника (non-interfering).
+        // - В parallel это может вызвать ConcurrentModificationException или undefined behavior.
+        // Пример ошибки:
+        List<String> modifiable = new ArrayList<>(Arrays.asList("a", "b", "c"));
+        // modifiable.parallelStream().forEach(s -> modifiable.add(s.toUpperCase())); // Ошибка!
+        // Модификация источника
+
+        // 3. Избегайте side-effects в операциях:
+        // - forEach, peek и т.д. не должны иметь побочных эффектов (mutable state).
+        // - В parallel порядок не гарантирован, side-effects могут быть race-conditioned.
+        // Пример плохой:
+        Set<String> sharedSet = ConcurrentHashMap.newKeySet(); // Даже thread-safe не спасает от
+                                                               // логики
+        List<String> words = Arrays.asList("apple", "banana", "cherry", "date", "elderberry");
+        words.parallelStream().forEach(w -> sharedSet.add(w)); // Может работать, но лучше
+        // collect(toSet())
+
+        // Лучше: Используйте collect() с thread-safe collector'ами (Collectors.toConcurrentMap() и
+        // т.д.).
+
+        // 4. Не используйте для маленьких данных или IO-bound:
+        // - Overhead создания ForkJoinPool tasks > пользы на <1000 элементов.
+        // - Для IO (файлы, network): блокирует потоки пула, замедляя всё.
+
+        // 5. Будьте осторожны с ordered vs unordered:
+        // - По умолчанию стрим ordered (если источник ordered, как List).
+        // - Это добавляет overhead для сохранения порядка в parallel (например, в collect()).
+        // - Если порядок не нужен: .unordered() для ускорения.
+        // Пример:
+
+        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        numbers.parallelStream().unordered() // Ускоряет, если не нужен порядок
+                .filter(i -> i > 5).collect(Collectors.toList()); // Порядок не сохранён
+
+        // 6. Reduce и accumulate: Убедитесь, что combiner associative и stateless.
+        // - Плохой combiner может дать неверный результат в parallel.
+        // Пример неверного:
+        // int badReduce = numbers.parallelStream().reduce(0, (a, b) -> a - b); // - не associative!
+        // Результат undefined
+
+        // Правильно: Используйте + или max/min, которые associative.
+
+        // 7. Кастомизация: Можно переопределить Spliterator для лучшего splitting, но редко нужно.
+        // Общий совет: Всегда тестируйте производительность (JMH) и корректность. Parallel не
+        // всегда быстрее!
+
+
+
+        // В целом, CompletableFuture — для асинхронных задач и фьючеров, parallelStream — для
+        // параллельной обработки коллекций.
+        // Они часто используются вместе, в stream'ах с асинхронными операциями (но для
+        // этого лучше CompletionStage в Java 9+).
     }
 
     static void example10() {
@@ -999,19 +1192,16 @@ public class App {
         // У HashMap есть два ключевых параметра, которые влияют на производительность
         // это начальная емкость и коэфицент загрузки
         print.accept(mapp.put(10, 100) + " ");
-        print.accept(mapp.put(10, 1000) + " "); // @return the previous value associated with {@code key}
+        print.accept(mapp.put(10, 1000) + " "); // @return the previous value associated with {@code
+                                                // key}
         /**
-         * // * Associates the specified value with the specified key in this map.
-         * // * If the map previously contained a mapping for the key, the old
-         * // * value is replaced.
-         * // *
-         * // * @param key key with which the specified value is to be associated
-         * // * @param value value to be associated with the specified key
-         * // * @return the previous value associated with {@code key}, or
-         * // * {@code null} if there was no mapping for {@code key}.
-         * // * (A {@code null} return can also indicate that the map
-         * // * previously associated {@code null} with {@code key}.)
-         * //
+         * // * Associates the specified value with the specified key in this map. // * If the map
+         * previously contained a mapping for the key, the old // * value is replaced. // * //
+         * * @param key key with which the specified value is to be associated // * @param value
+         * value to be associated with the specified key // * @return the previous value associated
+         * with {@code key}, or // * {@code null} if there was no mapping for {@code key}. // * (A
+         * {@code null} return can also indicate that the map // * previously associated
+         * {@code null} with {@code key}.) //
          */
         // public V put(K key, V value) {
         // return putVal(hash(key), key, value, false, true);
@@ -1101,7 +1291,7 @@ public class App {
 
         // и еще для примитивов OfLong OfDobule OfInt для избежание автоупаковки при
         // каждом вызове tryAdvace()
-        int[] numbers = { 1, 2, 3, 4, 5 };
+        int[] numbers = {1, 2, 3, 4, 5};
         Spliterator.OfInt spliteratorrrr = Arrays.spliterator(numbers);
         spliteratorrrr.forEachRemaining((int num) -> { // Принимает int, а не Integer!
             int squared = num * num; // Без распаковки!
@@ -1141,13 +1331,11 @@ public class App {
         long summ = pooll.invoke(new RecursiveTask<Long>() {
             @Override
             public Long compute() {
-                return StreamSupport.stream(spliter, true)
-                        .mapToLong(i -> {
-                            print.accept(
-                                    "текущий узел" + i.getCat().toString() + "текущий поток" + Thread.currentThread());
-                            return i.getCat().getAge();
-                        })
-                        .sum();
+                return StreamSupport.stream(spliter, true).mapToLong(i -> {
+                    print.accept("текущий узел" + i.getCat().toString() + "текущий поток"
+                            + Thread.currentThread());
+                    return i.getCat().getAge();
+                }).sum();
             }
         });
 
