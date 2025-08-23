@@ -26,6 +26,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -952,9 +953,158 @@ public class App {
     }
 
     static void example10() {
-        // mutithreadin
+        // multithreading
         // part 6
         // java 21: Virtual Threads
+
+        // Virtual Threads (виртуальные потоки) — это функция, введённая в Java 21 (сентябрь 2023)
+        // как часть Project Loom.
+        // Основная идея: сделать потоки лёгкими и дешёвыми, чтобы можно было создавать миллионы
+        // потоков без значительного overhead.
+        // В отличие от традиционных "платформенных" потоков (platform threads), которые являются
+        // тяжёлыми (каждый — это OS thread, с большим стеком ~1MB, дорогим созданием и
+        // переключением),
+        // виртуальные потоки — это user-mode threads, управляемые JVM, а не ОС.
+        // JVM монтирует (mounts) виртуальные потоки на реальные платформенные потоки (carrier
+        // threads) по мере необходимости.
+        // Ключевые особенности:
+        // - Лёгкость: Создание виртуального потока — это просто объект в heap, без вызова OS. Можно
+        // создавать миллионы (ограничено только памятью).
+        // - Блокировка без overhead: Когда виртуальный поток блокируется (например, на IO), JVM
+        // "демонтирует" его с carrier thread, освобождая реальный поток для других задач.
+        // Это решает проблему "one thread per request" в серверах — теперь можно иметь
+        // thread-per-request без риска исчерпания потоков.
+        // - Совместимость: Виртуальные потоки реализуют интерфейс Thread, так что существующий код
+        // (synchronized, wait/notify) работает без изменений.
+        // - Пул потоков: По умолчанию виртуальные потоки используют глобальный Executor
+        // (Executors.newVirtualThreadPerTaskExecutor()), который создаёт новый виртуальный поток
+        // для каждой задачи.
+        // - Ограничения: Не подходят для CPU-bound задач с долгим вычислением (без блокировок),
+        // т.к. могут монополизировать carrier threads. Для этого лучше платформенные потоки.
+        // - Debugging: Виртуальные потоки видны в jstack, но с префиксом "VirtualThread". Можно
+        // использовать Thread.dumpStack() и т.д.
+        // Преимущества:
+        // - Масштабируемость: Идеально для IO-bound приложений (веб-серверы, базы данных), где
+        // много блокирующих операций.
+        // - Простота: Нет нужды в реактивном программировании (RxJava, Project Reactor) или
+        // callbacks для асинхронности — обычный императивный код с блокирующими вызовами работает
+        // эффективно.
+        // - Интеграция: Работает с существующими API, как Thread.sleep(), FileInputStream.read() —
+        // они становятся non-blocking под капотом.
+        // Минусы:
+        // - Не для всего: В CPU-intensive задачах лучше ForkJoinPool или parallel streams.
+        // - Пиннинг: Если код использует synchronized в native методах или с pinned объектами,
+        // виртуальный поток может "прикрепиться" к carrier, снижая эффективность (решается с
+        // --enable-preview в ранних версиях, но в Java 21 stable).
+        // - Мониторинг: Нужно привыкнуть к новым метрикам (jconsole, VisualVM поддерживают).
+        // История: Project Loom начат в 2017, preview в Java 19/20, финал в Java 21.
+
+        // Пример 1: Создание виртуального потока
+        Thread virtualThread = Thread.ofVirtual().start(() -> {
+            System.out.println("Виртуальный поток: " + Thread.currentThread().getName());
+            try {
+                Thread.sleep(1000); // Блокировка — JVM демонтирует поток
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            System.out.println("Виртуальный поток завершён");
+        });
+
+        try {
+            virtualThread.join(); // Ждём завершения
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Пример 2: Использование с ExecutorService
+        // Executors.newVirtualThreadPerTaskExecutor() — создаёт виртуальный поток на задачу
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            Future<String> future = executor.submit(() -> {
+                System.out.println("Задача в виртуальном потоке");
+                Thread.sleep(500);
+                return "Результат";
+            });
+
+            try {
+                System.out.println("Получен: " + future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+            }
+        } // AutoCloseable — shutdown автоматом
+
+        // Пример 3: Массовое создание виртуальных потоков (демо масштабируемости)
+        List<Thread> threads = new ArrayList<>();
+        for (int i = 0; i < 1_000_000; i++) { // Миллион потоков — на платформенных это бы
+                                              // крашнулось
+            Thread vt = Thread.ofVirtual().start(() -> {
+                try {
+                    Thread.sleep(100); // Симулируем IO
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            threads.add(vt);
+        }
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        System.out.println("Создано миллион виртуальных потоков без проблем");
+
+        // Пример 4: Сравнение с платформенными потоками
+        // Платформенный поток: Thread.ofPlatform()
+        Thread platformThread = Thread.ofPlatform().start(() -> {
+            System.out.println("Платформенный поток: " + Thread.currentThread().getName());
+        });
+
+        try {
+            platformThread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Builder для кастомизации
+        Thread.Builder builder = Thread.ofVirtual().name("MyVirtual-");
+        Thread customVT = builder
+                .start(() -> System.out.println("Кастомный: " + Thread.currentThread().getName()));
+
+        // Пример 5: Обработка прерываний и состояний
+        Thread interruptingVT = Thread.ofVirtual().start(() -> {
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                System.out.println("Виртуальный поток прерван");
+                Thread.currentThread().interrupt(); // Восстанавливаем флаг
+            }
+        });
+
+        interruptingVT.interrupt(); // Прерываем
+        try {
+            interruptingVT.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        // Состояния: такие же, как у Thread (NEW, RUNNABLE, BLOCKED и т.д.)
+        System.out.println("Состояние: " + interruptingVT.getState()); // TERMINATED после join
+
+        // Важные методы и классы:
+        // - Thread.ofVirtual() — builder для виртуальных потоков.
+        // - Thread.ofPlatform() — для платформенных (обычных).
+        // - Executors.newVirtualThreadPerTaskExecutor() — executor для виртуальных.
+        // - Thread.isVirtual() — проверить, виртуальный ли.
+        // - System property: jdk.virtualThreadScheduler.parallelism — число carrier threads (по
+        // умолчанию = CPU cores).
+        // - Для серверов: Tomcat, Netty, Spring уже поддерживают виртуальные потоки в новых
+        // версиях.
+        // Когда использовать: В приложениях с тысячами concurrent запросов (web, microservices),
+        // где много блокирующего IO.
+        // Не использовать: В low-level коде, где нужен контроль над OS threads, или в native
+        // интеграциях.
+
+        // etc... Virtual Threads — это революция для Java concurrency, упрощающая асинхронный код.
     }
 
     static void example11() {
